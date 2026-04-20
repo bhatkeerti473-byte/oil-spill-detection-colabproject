@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Oil Spill Detection</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Prevent caching -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+
+    <style>
+        body {
+            background: #2f333a;
+            color: #e6edf3;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: auto;
+            margin-top: 20px;
+            padding: 30px;
+            background: #415368;
+            border-radius: 15px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .upload-box {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: #131c23;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card h5 {
+            color: #58a6ff;
+            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .img-preview {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+            border-radius: 8px;
+            background: #0d1117;
+            padding: 10px;
+        }
+
+        .img-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 450px;
+        }
+
+        .empty-placeholder {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0d1117;
+            border-radius: 8px;
+            color: #6e7681;
+        }
+
+        .result-box {
+            margin-top: 30px;
+            background: #a8c7d3;
+            color: black;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .result-box h4 {
+            margin-bottom: 15px;
+            color: #1f2937;
+            font-size: 1.3rem;
+        }
+
+        .result-details {
+            text-align: left;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .result-details p {
+            margin: 12px 0;
+            line-height: 1.8;
+            font-size: 1rem;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .status-high {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .status-medium {
+            color: #ea580c;
+            font-weight: 600;
+        }
+
+        .status-low {
+            color: #16a34a;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="main-container">
+
+        <h2>Oil Spill Detection Dashboard</h2>
+
+        <!-- Upload -->
+        <form method="POST" enctype="multipart/form-data" class="upload-box">
+
+            <div class="input-group" style="max-width:400px;">
+                <input type="file" name="file" id="fileInput" class="form-control" required>
+
+            </div>
+
+            <button type="submit" class="btn btn-primary">Upload satellite image & Detect</button>
+        </form>
+
+        <!-- Clear Button -->
+        <form action="/clear" method="get" class="text-center mb-3">
+            <button class="btn btn-danger">Clear</button>
+        </form>
+
+        <!-- Images -->
+        <div class="row g-4">
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <h5>Input Image</h5>
+                    <div class="img-container">
+                        {% if input_image %}
+                        <img src="{{ input_image }}" class="img-preview">
+                        {% else %}
+                        <div class="empty-placeholder">No image</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <h5>Mask</h5>
+                    <div class="img-container">
+                        {% if mask_image %}
+                        <img src="{{ mask_image }}" class="img-preview">
+                        {% else %}
+                        <div class="empty-placeholder">No mask</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <h5>Overlay</h5>
+                    <div class="img-container">
+                        {% if overlay_image %}
+                        <img src="{{ overlay_image }}" class="img-preview">
+                        {% else %}
+                        <div class="empty-placeholder">No overlay</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Result -->
+        {% if analysis %}
+        <div class="result-box">
+            <h4>🔍 Oil Spill Detection Results</h4>
+            <div class="result-details">
+                <p><span class="detail-label">Oil Coverage:</span> <span
+                        class="{% if analysis.oil_percent > 50 %}status-high{% elif analysis.oil_percent > 20 %}status-medium{% else %}status-low{% endif %}">{{
+                        analysis.oil_percent }}%</span></p>
+
+                <p><span class="detail-label">Confidence Score:</span> {{ analysis.confidence }}</p>
+
+                <p><span class="detail-label">Detection Status:</span>
+                    <span
+                        class="{% if 'High' in analysis.status %}status-high{% elif 'Medium' in analysis.status %}status-medium{% else %}status-low{% endif %}">
+                        {{ analysis.status }}
+                    </span>
+                </p>
+
+                {% if analysis.description %}
+                <p><span class="detail-label">Analysis:</span> {{ analysis.description }}</p>
+                {% endif %}
+
+                {% if analysis.loss %}
+                <p><span class="detail-label">Loss Function (Model Error):</span> {{ analysis.loss }}</p>
+                {% endif %}
+
+                {% if analysis.dice_coefficient %}
+                <p><span class="detail-label">Dice Coefficient (Accuracy):</span> {{ analysis.dice_coefficient }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Show file name -->
+    <script>
+        const input = document.getElementById("fileInput");
+        const label = document.getElementById("fileName");
+
+        input.addEventListener("change", function () {
+            if (this.files.length > 0) {
+                label.textContent = this.files[0].name;
+            } else {
+                label.textContent = "No file chosen";
+            }
+        });
+    </script>
+
+</body>
+
+</html>

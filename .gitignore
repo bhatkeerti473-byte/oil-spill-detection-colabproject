@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+data/      
+models/    
+final_model.h5
